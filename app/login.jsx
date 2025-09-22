@@ -5,13 +5,17 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Image,
   Alert,
   ScrollView,
+  useWindowDimensions,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
-import { app } from "../firebaseConfig"; // make sure firebaseConfig.js is set up
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  onAuthStateChanged,
+} from "firebase/auth";
+import { app } from "../firebaseConfig";
 
 const auth = getAuth(app);
 
@@ -21,11 +25,14 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const { width } = useWindowDimensions();
+  const isMobile = width < 768; // breakpoint
+
   // ✅ Auto redirect if logged in
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        router.replace("/dashboard"); // skip login if already logged in
+        router.replace("/dashboard");
       }
     });
     return unsubscribe;
@@ -41,7 +48,7 @@ export default function LoginScreen() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       Alert.alert("Success", "Login successful! 🚀");
-      router.push("/dashboard"); // go to dashboard
+      router.push("/dashboard");
     } catch (error) {
       Alert.alert("Login Failed", error.message);
     }
@@ -49,81 +56,74 @@ export default function LoginScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Left Section with Image */}
-      <View style={styles.leftSection}>
-        <Image
-          source={require("../assets/images/bb4.jpeg")} // replace with your image
-          style={styles.image}
-          resizeMode="cover"
-        />
-      </View>
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <View style={styles.container}>
+        {/* Left Section with Image (only show if not mobile) */}
+        {!isMobile && <View style={styles.leftSection} />}
 
-      {/* Right Section with Form */}
-      <View style={styles.rightSection}>
-        <Text style={styles.title}>Log in</Text>
-        <Text style={styles.subtitle}>
-          Don’t have an account?{" "}
-          <Text
-            style={styles.link}
-            onPress={() => router.push("/signup")}
+        {/* Right Section with Form */}
+        <View style={styles.rightSection}>
+          <Text style={styles.title}>Log in</Text>
+          <Text style={styles.subtitle}>
+            Don’t have an account?{" "}
+            <Text style={styles.link} onPress={() => router.push("/signup")}>
+              Create an Account
+            </Text>
+          </Text>
+
+          {/* Email */}
+          <TextInput
+            style={styles.input}
+            placeholder="Email Address"
+            placeholderTextColor="#999"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+
+          {/* Password */}
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor="#999"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          {/* Forgot Password */}
+          <TouchableOpacity>
+            <Text style={styles.forgot}>Forgot Password?</Text>
+          </TouchableOpacity>
+
+          {/* Login Button */}
+          <TouchableOpacity
+            style={styles.loginBtn}
+            onPress={handleLogin}
+            disabled={loading}
           >
-            Create an Account
-          </Text>
-        </Text>
-
-        {/* Email */}
-        <TextInput
-          style={styles.input}
-          placeholder="Email Address"
-          placeholderTextColor="#999"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-
-        {/* Password */}
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor="#999"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        {/* Forgot Password */}
-        <TouchableOpacity>
-          <Text style={styles.forgot}>Forgot Password?</Text>
-        </TouchableOpacity>
-
-        {/* Login Button */}
-        <TouchableOpacity
-          style={styles.loginBtn}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          <Text style={styles.loginText}>
-            {loading ? "Logging in..." : "Log in"}
-          </Text>
-        </TouchableOpacity>
-
-        {/* Terms */}
-        <Text style={styles.terms}>
-          I agree to the <Text style={styles.link}>Terms & Conditions</Text>
-        </Text>
-
-        {/* Divider */}
-        <Text style={styles.divider}>or</Text>
-
-        {/* Social Buttons */}
-        <View style={styles.socialContainer}>
-          <TouchableOpacity style={styles.socialBtn1}>
-            <Text>Continue with Google</Text>
+            <Text style={styles.loginText}>
+              {loading ? "Logging in..." : "Log in"}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.socialBtn}>
-            <Text style={{ color: "white" }}>Continue with Facebook</Text>
-          </TouchableOpacity>
+
+          {/* Terms */}
+          <Text style={styles.terms}>
+            I agree to the <Text style={styles.link}>Terms & Conditions</Text>
+          </Text>
+
+          {/* Divider */}
+          <Text style={styles.divider}>or</Text>
+
+          {/* Social Buttons */}
+          <View style={styles.socialContainer}>
+            <TouchableOpacity style={styles.socialBtn1}>
+              <Text>Continue with Google</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.socialBtn}>
+              <Text style={{ color: "white" }}>Continue with Facebook</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </ScrollView>
@@ -132,18 +132,13 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     flexDirection: "row",
     backgroundColor: "#fff",
   },
   leftSection: {
     flex: 1,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    borderTopLeftRadius: 20,
-    borderBottomLeftRadius: 20,
+    backgroundColor: "#1E293B", // placeholder if image removed
   },
   rightSection: {
     flex: 1,

@@ -9,14 +9,17 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
-import { createUserWithEmailAndPassword, signOut } from "firebase/auth"; // ⬅ added signOut
+import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
 import { useRouter } from "expo-router";
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isTablet = width >= 768; // tablet/iPad breakpoint
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -32,14 +35,12 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      // Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
 
-      // Save extra info in Firestore
       await setDoc(doc(db, "users", userCredential.user.uid), {
         firstName,
         lastName,
@@ -48,11 +49,7 @@ export default function SignupScreen() {
       });
 
       Alert.alert("Success", "Account Successfully created ✅");
-
-      // ✅ Sign them out so they must log in again
       await signOut(auth);
-
-      // Go to login page
       router.replace("/login");
     } catch (error) {
       Alert.alert("Signup Error", error.message);
@@ -62,44 +59,67 @@ export default function SignupScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-      <View style={styles.container}>
-        {/* Left Image Section */}
-        <View style={styles.leftSection}>
-          <ImageBackground
-            source={require("../assets/images/bb2.jpeg")}
-            style={styles.image}
-            resizeMode="cover"
-          />
-        </View>
+      <View
+        style={[
+          styles.container,
+          { flexDirection: isTablet ? "row" : "column" }, // responsive
+        ]}
+      >
+        {/* Left Image Section (hide on mobile) */}
+        {isTablet && (
+          <View style={styles.leftSection}>
+            <ImageBackground
+              source={require("../assets/images/bb2.jpeg")}
+              style={styles.image}
+              resizeMode="cover"
+            />
+          </View>
+        )}
 
         {/* Right Form Section */}
         <View style={styles.rightSection}>
-          <Text style={styles.header}>Create an Account</Text>
+          <Text style={[styles.header, { fontSize: isTablet ? 40 : 28 }]}>
+            Create an Account
+          </Text>
           <Text style={styles.subText}>
             Already have an account?{" "}
-            <Text
-              style={styles.link}
-              onPress={() => router.push("/login")}
-            >
+            <Text style={styles.link} onPress={() => router.push("/login")}>
               Log in
             </Text>
           </Text>
 
           {/* Input Fields */}
-          <View style={styles.row}>
-            <TextInput
-              style={[styles.input, { flex: 1, marginRight: 5 }]}
-              placeholder="First Name"
-              value={firstName}
-              onChangeText={setFirstName}
-            />
-            <TextInput
-              style={[styles.input, { flex: 1, marginLeft: 5 }]}
-              placeholder="Last Name"
-              value={lastName}
-              onChangeText={setLastName}
-            />
-          </View>
+          {isTablet ? (
+            <View style={styles.row}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginRight: 5 }]}
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+              />
+              <TextInput
+                style={[styles.input, { flex: 1, marginLeft: 5 }]}
+                placeholder="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+            </View>
+          ) : (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="First Name"
+                value={firstName}
+                onChangeText={setFirstName}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Last Name"
+                value={lastName}
+                onChangeText={setLastName}
+              />
+            </>
+          )}
 
           <TextInput
             style={styles.input}
@@ -137,12 +157,19 @@ export default function SignupScreen() {
           </Text>
 
           {/* Social Buttons */}
-          <View style={styles.socialRow}>
-            <TouchableOpacity style={styles.socialButton1}>
+          <View
+            style={[
+              styles.socialRow,
+              { flexDirection: isTablet ? "row" : "column" },
+            ]}
+          >
+            <TouchableOpacity
+              style={[styles.socialButton1, { marginBottom: isTablet ? 0 : 10 }]}
+            >
               <Text>Continue with Google</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.socialButton}>
-              <Text>Continue with Facebook</Text>
+              <Text style={{ color: "#fff" }}>Continue with Facebook</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -153,7 +180,6 @@ export default function SignupScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
     flex: 1,
     backgroundColor: "#1E1E1E",
   },
@@ -170,14 +196,13 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   header: {
-    fontSize: 40,
     fontWeight: "bold",
     marginBottom: 10,
-    color: "#ffffffff",
+    color: "#fff",
   },
   subText: {
     marginBottom: 20,
-    color: "#ffffffff",
+    color: "#fff",
   },
   link: {
     color: "#007BFF",
@@ -211,10 +236,9 @@ const styles = StyleSheet.create({
     marginTop: 15,
     textAlign: "center",
     fontSize: 12,
-    color: "#ffffffff",
+    color: "#fff",
   },
   socialRow: {
-    flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 20,
   },
@@ -230,7 +254,7 @@ const styles = StyleSheet.create({
   },
   socialButton1: {
     borderWidth: 1,
-    borderColor: "#373737ff",
+    borderColor: "#373737",
     backgroundColor: "#FFFFFF",
     padding: 12,
     borderRadius: 8,
